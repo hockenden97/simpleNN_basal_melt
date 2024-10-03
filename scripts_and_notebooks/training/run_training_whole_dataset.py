@@ -69,15 +69,18 @@ elif exp_name == 'newbasic2':
 
 ######### READ IN DATA
 
-inputpath_data = '/bettik/burgardc/DATA/NN_PARAM/interim/INPUT_DATA/'
-outputpath_nn_models = '/bettik/burgardc/DATA/NN_PARAM/interim/NN_MODELS/experiments/'
-outputpath_doc = '/bettik/burgardc/SCRIPTS/basal_melt_neural_networks/custom_doc/experiments/'
+#inputpath_data = '/bettik/burgardc/DATA/NN_PARAM/interim/INPUT_DATA/'
+inputpath_data = '../../data/interim/INPUT_DATA/'
+#outputpath_nn_models = '/bettik/burgardc/DATA/NN_PARAM/interim/NN_MODELS/experiments/'
+outputpath_nn_models = '../../data/interim/NN_MODELS/'
+#outputpath_doc = '/bettik/burgardc/SCRIPTS/basal_melt_neural_networks/custom_doc/experiments/'
+#outputpath_doc = 
 
 tblock_dim = range(1,14)
 isf_dim = [10,11,12,13,18,22,23,24,25,30,31,33,38,39,40,42,43,44,45,47,48,51,52,53,54,55,58,61,65,66,69,70,71,73,75]
 
 
-path_model = outputpath_nn_models+'WHOLE/'
+path_model = outputpath_nn_models
 
 if TS_opt == 'extrap':
     inputpath_CVinput = inputpath_data+'EXTRAPOLATED_ISFDRAFT_CHUNKS/'
@@ -149,6 +152,7 @@ timelength = time_end - time_start
 time_end0 = datetime.datetime.now()
 print(time_end0)
 
+print(path_model + 'model_nn_'+mod_size+'_'+exp_name+'_wholedataset_'+str(seed_nb).zfill(2)+'_TS'+TS_opt+'_norm'+norm_method+'.h5')
 model.save(path_model + 'model_nn_'+mod_size+'_'+exp_name+'_wholedataset_'+str(seed_nb).zfill(2)+'_TS'+TS_opt+'_norm'+norm_method+'.h5')
 
 # convert the history.history dict to a pandas DataFrame:     
