@@ -1,10 +1,10 @@
 import xarray as xr
 import numpy as np
 import pandas as pd
-import basal_melt_neural_networks.data_formatting as dfmt
+import nn_functions.data_formatting as dfmt
 from tqdm.notebook import tqdm
 from tensorflow import keras
-from basal_melt_neural_networks.constants import *
+from nn_functions.constants import *
 
 
 def identify_nemo_run_from_tblock(tblock):
