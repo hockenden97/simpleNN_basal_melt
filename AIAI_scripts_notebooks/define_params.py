@@ -1,0 +1,86 @@
+# This python file defines the parameters for creating datasets and running the neural network
+# This should avoid the need to copy and paste these into different notebooks/scripts and keep things consistent
+
+# Define the different datasets used to explore the performance of the neural network 
+def month_year_by_collection(this_collection, title = False):
+    if this_collection == 'whole_dataset':
+        title = 'The entire dataset is used as training'
+        months_mask = [1,2,3,4,5,6,7,8,9,10,11,12]
+        years_mask = [1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989,
+           1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
+           2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+           2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022,
+           2023]
+    elif this_collection == 'no_mar_oct':
+        title = 'March and October are used for testing'
+        months_mask = [1,2,4,5,6,7,8,10,11,12]
+        years_mask = [1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989,
+           1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
+           2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+           2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022,
+           2023]
+    elif this_collection == 'no_jun_dec':
+        title = 'June and December are used for testing'
+        months_mask = [1,2,3,4,5,7,8,9,10,11]
+        years_mask = [1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989,
+           1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
+           2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+           2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022,
+           2023]
+    elif this_collection == 'up_to_2018':
+        title = 'Simulations after 2018 are used for testing'
+        months_mask = [1,2,3,4,5,6,7,8,9,10,11,12]
+        years_mask = [1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989,
+           1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
+           2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+           2012, 2013, 2014, 2015, 2016, 2017, 2018]
+    elif this_collection == 'after_1984':
+        title = 'Simulations before 1984 are used for testing'
+        months_mask = [1,2,3,4,5,6,7,8,9,10,11,12]
+        years_mask = [1984, 1985, 1986, 1987, 1988, 1989,
+           1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
+           2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+           2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022,
+           2023]
+    elif this_collection == 'no_middle_5':
+        title = 'Simulations from 1999-2003 are used for testing'
+        months_mask = [1,2,3,4,5,6,7,8,9,10,11,12]
+        years_mask = [1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989,
+           1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 
+           2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+           2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022,
+           2023]
+    else:
+        print('I do not know this collection, help!')
+    if title == True:
+        return months_mask, years_mask, title
+    else:
+        return months_mask, years_mask
+
+# Set list of desired variables for a particular experiment 
+def var_list_by_exp_name(exp_name):
+    if exp_name == 'all_vars':
+        var_list = ['lat', 'lon', 'year', 'month', 'basins_NEMO', 'approx_area',
+                   'distances_GL', 'distances_OO', 'distances_OC',
+                   'temperature_prop', 'mean_T', 'std_T',
+                   'salinity_prop', 'mean_S', 'std_S',
+                   'corrected_isdraft', 'slope_is_lon', 'slope_is_lat', 'slope_is_across_front', 'slope_is_towards_front',
+                   'bathymetry', 'slope_ba_lon', 'slope_ba_lat', 'slope_ba_across_front', 'slope_ba_towards_front',
+                   'melt_m_ice_per_y']
+    elif exp_name == 'reference':
+        var_list = ['lat', 'lon', 'year', 'month', 'melt_m_ice_per_y']
+    elif exp_name == 'slope_lat_lon':
+        var_list =   ['distances_GL', 'distances_OO', 'distances_OC', 
+                     'temperature_prop', 'salinity_prop', 'mean_T', 'mean_S', 'std_T', 'std_S',
+                     'corrected_isdraft', 'slope_is_lon', 'slope_is_lat', 
+                     'bathymetry', 'slope_ba_lon', 'slope_ba_lat',  
+                     'melt_m_ice_per_y']
+    elif exp_name == 'slope_front':
+        var_list =   ['distances_GL', 'distances_OO', 'distances_OC',
+                     'temperature_prop', 'mean_T', 'std_T',
+                     'salinity_prop', 'mean_S', 'std_S',
+                     'corrected_isdraft', 'slope_is_across_front', 'slope_is_towards_front',
+                     'bathymetry', 'slope_ba_across_front', 'slope_ba_towards_front',
+                     'melt_m_ice_per_y']
+    return var_list
+

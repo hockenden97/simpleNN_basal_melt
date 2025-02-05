@@ -6,6 +6,8 @@ This script is to train a NN on the whole dataset
 Author: Clara Burgard
 """
 
+################ Load in the relevant packages ################
+
 import numpy as np
 import xarray as xr
 import pandas as pd
@@ -15,12 +17,19 @@ import datetime
 import time
 import sys
 
+# To avoid problems with tensorflow, add the following lines before importing it
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 from tensorflow import keras
 
+# To avoid problems with nn_functions, add the following lines before importing it 
 import sys
 sys.path.insert(1, '/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt')
+import nn_functions.model_functions as modf
 
+# Alternatively, just load the functions for loading the appropriate model 
 #def get_model(size,shape,activ_fct,output_shape): #'mini', 'small', 'medium', 'large', 'extra_large'
 #    model = keras.models.Sequential()
 #    model.add(keras.layers.Input(shape, name="InputLayer"))
@@ -33,27 +42,27 @@ sys.path.insert(1, '/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt')
 #                  loss      = 'mse',
 #                  metrics   = ['mae', 'mse'] ) 
 #    return model
-import nn_functions.model_functions as modf
 
-######### READ IN OPTIONS
+################ READ IN OPTIONS ################
 
-#mod_size = str(sys.argv[1]) #'mini', 'small', 'medium', 'large', 'extra_large'
-#TS_opt = str(sys.argv[2]) # extrap, whole, thermocline
-#norm_method = str(sys.argv[3]) # std, interquart, minmax
-#exp_name = str(sys.argv[4])
-#seed_nb = int(sys.argv[5])
+mod_size = str(sys.argv[1]) #'mini', 'small', 'medium', 'large', 'extra_large'
+TS_opt = str(sys.argv[2]) # extrap, whole, thermocline
+norm_method = str(sys.argv[3]) # std, interquart, minmax
+exp_name = str(sys.argv[4])
+seed_nb = int(sys.argv[5])
+this_collection = str(sys.argv[6])
 
-mod_size = 'small'
-TS_opt = 'extrap'
-norm_method = 'std'
-exp_name = 'slope_front'
-seed_nb = 1
-this_collection = 'whole_dataset' # Which dataset to use for training
+#mod_size = 'small'
+#TS_opt = 'extrap'
+#norm_method = 'std'
+#exp_name = 'slope_front'
+#seed_nb = 1
+#this_collection = 'whole_dataset' # Which dataset to use for training
 
-print('Set options')
+print()
 print('Experiment name is', exp_name)
 print('Dataset is', this_collection)
-
+print()
 
 np.random.seed(seed_nb)
 tf.random.set_seed(seed_nb)
@@ -81,9 +90,7 @@ elif exp_name == 'slope_front':
                  'bathymetry', 'slope_ba_across_front', 'slope_ba_towards_front',
                  'melt_m_ice_per_y']
 
-print('Set var list')
-
-######### READ IN DATA
+################ READ IN DATA ################
 
 # Filepath for normalised inputs
 fp_training_data =  '/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_data/Training_data/'
@@ -94,10 +101,10 @@ fp_var_val_norm =   fp_training_data + this_collection + '_' + 'val_data.nc'
 outputpath_nn_models = '/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_data/NN_models/'
 fp_model =   outputpath_nn_models + 'model_nn_' + \
              mod_size + '_' + exp_name + '_' + this_collection + '_' + \
-             str(seed_nb).zfill(2) + '_TS' + TS_opt + '_norm' + norm_method + '.keras'
+             str(seed_nb).zfill(2) + '_' + TS_opt + '_' + norm_method + '.keras'
 fp_history = outputpath_nn_models + 'history_' + \
              mod_size + '_' + exp_name + '_' + this_collection + '_' + \
-             str(seed_nb).zfill(2) + '_TS' + TS_opt + '_norm' + norm_method + '.csv'
+             str(seed_nb).zfill(2) + '_' + TS_opt + '_' + norm_method + '.csv'
 
 if TS_opt == 'extrap':
     
@@ -119,8 +126,9 @@ if TS_opt == 'extrap':
 
 else:
     print('Sorry, I dont know this option for TS input yet, you need to implement it...')
+print()
 
-######### TRAIN THE MODEL
+################ TRAIN THE MODEL ################
 
 #input_size = x_train_norm.values.shape[0]
 input_size = x_train_norm.values.shape[0]
@@ -147,7 +155,7 @@ early_stop = tf.keras.callbacks.EarlyStopping(
 )
 
 time_start = datetime.datetime.now()
-print('Starting to fit model at:', time_start)
+print('Starting to fit model at:', time_start.strftime("%Y-%m-%d %H:%M:%S"))
 
 # Can change x_train_norm back to x_train_norm.T.values if you remove the previous 4 lines 
 
@@ -160,11 +168,13 @@ history = model.fit(x_train_norm.T.values,
                    callbacks=[reduce_lr, early_stop])
 
 time_end = datetime.datetime.now()
-print('Finished fitting model at:', time_end)
+print('Finished fitting model at:', time_end.strftime("%Y-%m-%d %H:%M:%S"))
 hrs, mins = divmod((time_end - time_start).seconds, 60*60)
 mins, secs = divmod(mins, 60)
 print('Runtime: {}:{}:{}'.format(str(hrs).zfill(2), str(mins).zfill(2), str(secs).zfill(2)))
+print()
 
+################ Save the results ################
 
 should_i_save = True
 if should_i_save == True:
@@ -181,4 +191,4 @@ if should_i_save == True:
     print(fp_history)
 else:
     print('Nothing has been saved yet, change should_i_save to True if you want to save')
-
+print()
