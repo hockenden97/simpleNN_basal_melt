@@ -37,23 +37,27 @@ import nn_functions.model_functions as modf
 
 ######### READ IN OPTIONS
 
-#mod_size = str(sys.argv[1]) #'mini', 'small', 'medium', 'large', 'extra_large'
-#TS_opt = str(sys.argv[2]) # extrap, whole, thermocline
-#norm_method = str(sys.argv[3]) # std, interquart, minmax
-#exp_name = str(sys.argv[4])
-#seed_nb = int(sys.argv[5])
+mod_size = str(sys.argv[1]) #'mini', 'small', 'medium', 'large', 'extra_large'
+TS_opt = str(sys.argv[2]) # extrap, whole, thermocline
+norm_method = str(sys.argv[3]) # std, interquart, minmax
+exp_name = str(sys.argv[4])
+seed_nb = int(sys.argv[5])
+this_collection = int(sys.argv[6])
+annual_f = int(sys.argv[7])
 
-mod_size = 'small'
-TS_opt = 'extrap'
-norm_method = 'std'
-exp_name = 'slope_front'
-seed_nb = 1
-this_collection = 'whole_dataset' # Which dataset to use for training
+
+#mod_size = 'small'
+#TS_opt = 'extrap'
+#norm_method = 'std'
+#exp_name = 'slope_front'
+#seed_nb = 1
+#this_collection = 'whole_dataset' # Which dataset to use for training
+#annual_f = 'annual_' # #or just empty '' if you want the whole thing 
 
 print('Set options')
 print('Experiment name is', exp_name)
 print('Dataset is', this_collection)
-
+print('Annual_only is', annual_f)
 
 np.random.seed(seed_nb)
 tf.random.set_seed(seed_nb)
@@ -87,16 +91,16 @@ print('Set var list')
 
 # Filepath for normalised inputs
 fp_training_data =  '/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_data/Training_data/'
-fp_var_train_norm = fp_training_data + this_collection + '_' + 'train_data.nc'
-fp_var_val_norm =   fp_training_data + this_collection + '_' + 'val_data.nc'
+fp_var_train_norm = fp_training_data + this_collection + '_' + annual_f + 'train_data.nc'
+fp_var_val_norm =   fp_training_data + this_collection + '_' + annual_f + 'val_data.nc'
 
 # Filepath for outputs 
 outputpath_nn_models = '/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_data/NN_models/'
 fp_model =   outputpath_nn_models + 'model_nn_' + \
-             mod_size + '_' + exp_name + '_' + this_collection + '_' + \
+             mod_size + '_' + exp_name + '_' + this_collection + '_' + annual_f + \
              str(seed_nb).zfill(2) + '_TS' + TS_opt + '_norm' + norm_method + '.keras'
 fp_history = outputpath_nn_models + 'history_' + \
-             mod_size + '_' + exp_name + '_' + this_collection + '_' + \
+             mod_size + '_' + exp_name + '_' + this_collection + '_' + annual_f + \
              str(seed_nb).zfill(2) + '_TS' + TS_opt + '_norm' + norm_method + '.csv'
 
 if TS_opt == 'extrap':
@@ -171,7 +175,6 @@ if should_i_save == True:
     model.save(fp_model)
     print('The trained neural network has been saved to this location :')
     print(fp_model)
-    print()
     
     # convert the history.history dict to a pandas DataFrame:     
     hist_df = pd.DataFrame(history.history) 

@@ -5,7 +5,8 @@ TS_opt='extrap' # extrap, whole, thermocline
 norm_method='std' # std, interquart, minmax
 exp_name='slope_front'
 this_collection='after_1984' 
-seed_nb='1'
+seed_nb='10'
+annual_f='annual_'
 
 # Where to find the python script to run the job on 
 path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/batch_training.py
@@ -13,7 +14,7 @@ path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/
 # Where to save the job output
 path_jobid=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_data/NN_models
 
-path_jobname=$path${mod_size}_${exp_name}_${this_collection}_${seed_nb}_${TS_opt}_${norm_method}
+path_jobname=$path${mod_size}_${exp_name}_${this_collection}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
 echo "Running these variables: " $path_jobname
 
 # Define the job that will run (load environment, save python output to log file) 
@@ -27,7 +28,7 @@ conda activate nnets_py38
 
 # Run python with the specified variables 
 # The 2>&1 means that errors in the python file will appear in the stdout file not the stderr file (I think) 
-python -u $path_python ${mod_size} ${TS_opt} ${norm_method} ${exp_name} ${seed_nb} ${this_collection}  2>&1 
+python -u $path_python ${mod_size} ${TS_opt} ${norm_method} ${exp_name} ${seed_nb} ${this_collection}  ${annual_f} 2>&1 
 
 echo 'Finished' $OAR_JOB_ID 
 echo 'Finished' $OAR_JOB_ID 1>&2
