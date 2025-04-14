@@ -4,13 +4,14 @@ mod_size='small'  #'mini', 'small', 'medium', 'large', 'extra_large'
 TS_opt='extrap' # extrap, whole, thermocline
 norm_method='std' # std, interquart, minmax
 exp_name='slope_front'
-this_collection='OPM026_whole_dataset' 
+this_collection='OPM026_to2008' 
 annual_f='annual_'
 
 # Where to find the python script to run the job on 
 path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/batch_training.py
-# Where to save the job output
-path_jobid=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_data/NN_models
+# Where to save the standardised job output files (.o and .e)
+path_jobid=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/TRAIN_files/
+path_local=TRAIN_files/
 
 for i in {1..10} # Set the seeds 1 to 10 for generating difference ensemble NN
 do
@@ -18,9 +19,11 @@ do
     echo ${seed_nb}
     path_jobname=$path${mod_size}_${exp_name}_${this_collection}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
     echo "Running these variables: " $path_jobname
+    path_sh_file=$path_jobid${mod_size}_${exp_name}_${this_collection}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
+    path_sh_local=$path_local${mod_size}_${exp_name}_${this_collection}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
     
     # Define the job that will run (load environment, save python output to log file) 
-    cat <<EOF > $path_jobname.sh
+    cat <<EOF > $path_sh_file.sh
     
     #!/bin/bash
     
@@ -37,10 +40,10 @@ do
 EOF
     
     # Make the job file executable
-    chmod +x $path_jobname.sh
+    chmod +x $path_sh_file.sh
     
     # And then execute it 
-    oarsub -S ./$path_jobname.sh --stdout $path_jobid/$path_jobname.o --stderr $path_jobid/$path_jobname.e -l nodes=1/core=4,walltime=02:30:00 -n $path_jobname --project mais 
+    oarsub -S ./$path_sh_local.sh --stdout $path_jobid/$path_jobname.o --stderr $path_jobid/$path_jobname.e -l nodes=1/core=4,walltime=02:30:00 -n $path_jobname --project mais 
     
     # And then remove the sh file which runs the code because they clutter up the folder and are all just repeats 
     #rm $path_jobname.sh
