@@ -43,6 +43,8 @@ import nn_functions.model_functions as modf
 #                  metrics   = ['mae', 'mse'] ) 
 #    return model
 
+import define_params
+
 ################ READ IN OPTIONS ################
 
 mod_size = str(sys.argv[1]) #'mini', 'small', 'medium', 'large', 'extra_large'
@@ -67,28 +69,8 @@ print()
 np.random.seed(seed_nb)
 tf.random.set_seed(seed_nb)
 
-
-if exp_name == 'all_vars':
-    var_list = ['lat', 'lon', 'year', 'month',
-               'distances_GL', 'distances_OO', 'distances_OC',
-               'temperature_prop', 'mean_T', 'std_T',
-               'salinity_prop', 'mean_S', 'std_S',
-               'corrected_isdraft', 'slope_is_lon', 'slope_is_lat', 'slope_is_across_front', 'slope_is_towards_front',
-               'bathymetry', 'slope_ba_lon', 'slope_ba_lat', 'slope_ba_across_front', 'slope_ba_towards_front',
-               'melt_m_ice_per_y']
-elif exp_name == 'slope_lat_lon':
-    var_list =   ['distances_GL', 'distances_OO', 'distances_OC', 
-                 'temperature_prop', 'salinity_prop', 'mean_T', 'mean_S', 'std_T', 'std_S',
-                 'corrected_isdraft', 'slope_is_lon', 'slope_is_lat', 
-                 'bathymetry', 'slope_ba_lon', 'slope_ba_lat',  
-                 'melt_m_ice_per_y']
-elif exp_name == 'slope_front':
-    var_list =   ['distances_GL', 'distances_OO', 'distances_OC',
-                 'temperature_prop', 'mean_T', 'std_T',
-                 'salinity_prop', 'mean_S', 'std_S',
-                 'corrected_isdraft', 'slope_is_across_front', 'slope_is_towards_front',
-                 'bathymetry', 'slope_ba_across_front', 'slope_ba_towards_front',
-                 'melt_m_ice_per_y']
+var_list = define_params.var_list_by_exp_name(exp_name)
+print(var_list)
 
 ################ READ IN DATA ################
 
