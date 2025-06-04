@@ -4,8 +4,9 @@ mod_size='small'  #'mini', 'small', 'medium', 'large', 'extra_large'
 TS_opt='extrap' # extrap, whole, thermocline
 norm_method='std' # std, interquart, minmax
 exp_name='slope_front'
-this_collection='OPM026_to2058' 
-annual_f='annual_'
+#this_collection='OPM026_to2058' 
+this_collection='OPM026_OPM031_10yr'
+annual_f='' #  'annual_', or ''
 
 # Where to find the python script to run the job on 
 path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/batch_training.py

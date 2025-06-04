@@ -3,16 +3,20 @@
 #simulation='OPM026'
 #for i in {2024..2068}
 #for i in {2050..2068}
-simulation='OPM0263'
-for i in {1980..1981}
+#simulation='OPM0263'
+#for i in {1980..1981}
 #for i in {1979..2018}
 #for i in {1981..2018}
+simulation='OPM031'
+#for i in {1999..2000}
+for i in {2028..2029}
 
 do 
     year=${i}
     # Where to find the python script to run the job on 
-    path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/NN_prep_input_OPM0263.py
     #path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/NN_prep_input_OPM0263.py
+    #path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/NN_prep_input_OPM0263.py
+    path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/PREP_inputOPM.py
     # Where to save the job output
     path_jobid=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/JOB_files/
     path_local=JOB_files/
