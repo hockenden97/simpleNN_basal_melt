@@ -1,3 +1,17 @@
+# Data files that shouldn't be tracked by git
+*.nc
+AIAI_scripts_notebooks/TRAIN_files/*
+AIAI_scripts_notebooks/JOB_files/*
+AIAI_data/*
+# Processing files from OAR jobs
+*.o*
+*.e*
+# Figures
+*.jpg
+*.png
+*.pdf
+
+#Everything below here added by Clara/default
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
