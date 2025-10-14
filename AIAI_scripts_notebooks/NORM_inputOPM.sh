@@ -1,15 +1,39 @@
 #!/bin/bash
-#OAR -n nn_input_prep 
-#OAR --stdout TRAIN_files/normalise2.o
-#OAR --stderr TRAIN_files/normalise2.e 
-#OAR -l nodes=1/core=4,walltime=02:30:00 
-#OAR --project mais
+#this_collection_NN='OPM026_to2028_OPM031_2089to2098' #'OPM026_whole_dataset'
+#this_collection_NN='OPM026_OPM031_1yr'
+#this_collection_NN='OPM026_OPM031_5yr'
 
-# 13th December 2024
+echo "Merging Christophs data"
+this_collection="Christoph_v2_whole_dataset"
 
+# Where to find the python script to run the job on 
+path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/NN_norm_input_Christoph.py
+path_jobid=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/JOB_files/
+path_local=JOB_files/
+
+# Where to save the job output
+path_jobname=$path_${this_collection}
+echo "Running these variables"
+
+path_sh_file=${path_jobid}${this_collection}
+path_sh_local=${path_local}${this_collection}
+
+# Define the job that will run (load environment, save python output to log file) 
+cat <<EOF > $path_sh_file.sh
+#!/bin/bash
+# Load the conda environment
 # conda init
 conda activate nnets_py38
-echo "Now python?"
-python NORM_inputOPM.py 
+# Run python with the specified variables 
+# The 2>&1 means that errors in the python file will appear in the stdout file not the stderr file (I think) 
+echo "Beginning python script"
+python -u $path_python 2>&1 
+echo 'Finished' $OAR_JOB_ID 
+echo 'Finished' $OAR_JOB_ID 1>&2
+EOF
 
-echo "[end]"
+# Make the job file executable
+chmod +x $path_sh_file.sh
+
+# And then execute it 
+oarsub -S ./$path_sh_local.sh --stdout $path_jobid/$path_jobname.o --stderr $path_jobid/$path_jobname.e -l nodes=1/core=4,walltime=2:00:00 -n $path_jobname --project mais 

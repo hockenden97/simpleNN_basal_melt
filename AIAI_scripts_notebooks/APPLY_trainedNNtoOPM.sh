@@ -3,9 +3,11 @@
 #this_collection_NN='OPM026_to2028_OPM031_2089to2098' #'OPM026_whole_dataset'
 #this_collection_NN='OPM026_OPM031_1yr'
 #this_collection_NN='OPM026_OPM031_5yr'
-this_collection_NN='OPM026_OPM031_10yr'
-this_collection_apply='OPM031_whole_dataset'
+#this_collection_NN='OPM0263_OPM031_100yr'
+this_collection_NN='OPM026_OPM0263_OPM031_OPM016_OPM018_OPM021_ctrl94_isf94_isfru94' #OPM026_OPM0263_OPM031_Christoph
+this_collection_apply='OPM021_whole_dataset' #same_except_Christoph_v2 + _whole_dataset
 exp_name='slope_front'
+job_type='APPLY_'
 
 echo "Applying" $this_collection_NN "to" $this_collection_apply
 
@@ -15,11 +17,11 @@ path_jobid=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/J
 path_local=JOB_files/
 
 # Where to save the job output
-path_jobname=$path_${this_collection_NN}_${this_collection_apply}
+path_jobname=$path_${job_type}${this_collection_NN}_${this_collection_apply}
 echo "Running these variables"
 
-path_sh_file=${path_jobid}${this_collection_NN}_${this_collection_apply}
-path_sh_local=${path_local}${this_collection_NN}_${this_collection_apply}
+path_sh_file=${path_jobid}${job_type}${this_collection_NN}_${this_collection_apply}
+path_sh_local=${path_local}${job_type}${this_collection_NN}_${this_collection_apply}
 
 # Define the job that will run (load environment, save python output to log file) 
 cat <<EOF > $path_sh_file.sh

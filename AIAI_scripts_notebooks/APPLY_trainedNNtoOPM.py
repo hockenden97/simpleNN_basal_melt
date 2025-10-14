@@ -25,6 +25,7 @@ import define_params
 import cartopy.crs as ccrs
 proj=ccrs.SouthPolarStereo(central_longitude=0.0)
 trans=ccrs.PlateCarree()
+import time
 
 # Set the filepaths to useful files 
 path_model = '/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_data/NN_models/'
@@ -118,19 +119,22 @@ def apply_nn_save_results(this_collection, exp_name, keep_all_runs = True, \
                                 'month': clean_df.month, 
                                 'melt_m_ice_per_y': clean_df.melt_m_ice_per_y})
     for i in range(len(seed_nb_array)):
+        start_time = time.time()
         list_melt_seeds.append('melt_' + str(i+1).zfill(2))
         if verbose == 2:
             model = load_model_nn(exp_name, this_collection, seed_nb_array[i], \
                               mod_size = mod_size, TS_opt = TS_opt, norm_method = norm_method, \
                               verbose = 1, annual_f = annual_f) 
             df_ref_pred['melt_' + str(i+1).zfill(2)] = apply_model(model, norm_metrics, clean_df, exp_name, verbose = 1)
-            print(seed_nb_array[i], 'out of', len(seed_nb_array), 'processed', end = '\r')
+            end_time = time.time()
+            print(seed_nb_array[i], 'out of', len(seed_nb_array), 'processed. Time: {:.0f} s'.format(end_time - start_time), end = '\r')
         else:
             model = load_model_nn(exp_name, this_collection, seed_nb_array[i], \
                               mod_size = mod_size, TS_opt = TS_opt, norm_method = norm_method, \
                               verbose = 0) 
             df_ref_pred['melt_' + str(i+1).zfill(2)] = apply_model(model, norm_metrics, clean_df, exp_name, verbose = 0)
-            print(seed_nb_array[i], 'out of', len(seed_nb_array), 'processed', end = '\r')
+            end_time = time.time()
+            print(seed_nb_array[i], 'out of', len(seed_nb_array), 'processed. Time: {:.0f} s'.format(end_time - start_time), end = '\r')
     # Calculate the ensemble mean 
     df_ref_pred['melt_pred_mean'] = np.mean(df_ref_pred[list_melt_seeds], axis = 1).values
     

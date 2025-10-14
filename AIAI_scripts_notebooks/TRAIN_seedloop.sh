@@ -4,9 +4,18 @@ mod_size='small'  #'mini', 'small', 'medium', 'large', 'extra_large'
 TS_opt='extrap' # extrap, whole, thermocline
 norm_method='std' # std, interquart, minmax
 exp_name='slope_front'
-#this_collection='OPM026_to2058' 
-this_collection='OPM026_OPM031_10yr'
+#this_collection='OPM026'
+#this_collection='OPM031'
+#this_collection='OPM026_OPM031'
+#this_collection='OPM026_Christoph'
+#this_collection='OPM031_Christoph'
+#this_collection='OPM026_OPM031_Christoph'
+#this_collection='Christoph_annual'
+this_collection='OPM0263'
+this_collection='OPM026_OPM0263_OPM031_OPM016_OPM018_OPM021_ctrl94_isf94_isfru94'
+this_collection_oarname='ALL'
 annual_f='' #  'annual_', or ''
+job_type='TRAIN_'
 
 # Where to find the python script to run the job on 
 path_python=/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/AIAI_scripts_notebooks/batch_training.py
@@ -18,10 +27,10 @@ for i in {1..10} # Set the seeds 1 to 10 for generating difference ensemble NN
 do
     seed_nb=${i}     
     echo ${seed_nb}
-    path_jobname=$path${mod_size}_${exp_name}_${this_collection}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
+    path_jobname=$path${job_type}${mod_size}_${exp_name}_${this_collection_oarname}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
     echo "Running these variables: " $path_jobname
-    path_sh_file=$path_jobid${mod_size}_${exp_name}_${this_collection}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
-    path_sh_local=$path_local${mod_size}_${exp_name}_${this_collection}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
+    path_sh_file=$path_jobid${job_type}${mod_size}_${exp_name}_${this_collection_oarname}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
+    path_sh_local=$path_local${job_type}${mod_size}_${exp_name}_${this_collection_oarname}_${annual_f}${seed_nb}_${TS_opt}_${norm_method}
     
     # Define the job that will run (load environment, save python output to log file) 
     cat <<EOF > $path_sh_file.sh
@@ -44,7 +53,7 @@ EOF
     chmod +x $path_sh_file.sh
     
     # And then execute it 
-    oarsub -S ./$path_sh_local.sh --stdout $path_jobid/$path_jobname.o --stderr $path_jobid/$path_jobname.e -l nodes=1/core=4,walltime=02:30:00 -n $path_jobname --project mais 
+    oarsub -S ./$path_sh_local.sh --stdout $path_jobid/$path_jobname.o --stderr $path_jobid/$path_jobname.e -l nodes=1/core=4,walltime=08:00:00 -n $path_jobname --project mais 
     
     # And then remove the sh file which runs the code because they clutter up the folder and are all just repeats 
     #rm $path_jobname.sh
