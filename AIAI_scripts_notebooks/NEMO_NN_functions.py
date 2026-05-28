@@ -17,6 +17,37 @@ from pyproj import Transformer
 # To create the ocean profile from target coordinates
 from scipy.spatial import cKDTree
 
+def normalise_variable_names(ds):
+    # Define expected names, and possible options for those names 
+    expected = {
+        "thetao": ["thetao", "votemper"],
+        "so": ["so", "vosaline"]
+    }
+    # Create an empty list to fill with variables to be renames
+    rename_dict = {}
+
+    for correct_name, possible_names in expected.items():
+        # Check if the correct name already exists 
+        if correct_name in ds.data_vars:
+            continue
+        # Otherwise look for alternatives
+        found = None
+        for alt in possible_names:
+            if alt in ds.data_vars:
+                found = alt
+                break
+        # If an alternative was found, add to renaming dictionary to rename later
+        if found:
+            rename_dict[found] = correct_name
+        else:
+            # If non of the options were present
+            raise ValueError(
+                f"Dataset missing required variable: '{correct_name}'. "
+                f"Expected one of {possible_names}"
+            )
+    # Apply renaming 
+    return ds.rename(rename_dict)
+
 def load_TSmelt_normal(filepath_nemo_output):
     # Load in the simulation files 
     gridT_varofint = xr.open_dataset(filepath_nemo_output)
@@ -29,12 +60,35 @@ def load_TSmelt_normal(filepath_nemo_output):
     y_trim = np.max(np.argwhere(gridT_varofint.nav_lat[:,0].data <= min_lat))
     print('Cropped to Antarctica only')
     # Take this slice 
-    gridT2 = gridT_varofint.sel(y = slice(0,y_trim+1))[['thetao','so', 'area', 'bathy', 'isf_draft']]
+    #gridT2 = gridT_varofint.sel(y = slice(0,y_trim+1))[['thetao','so', 'area', 'bathy', 'isf_draft']]
+    gridT2 = gridT_varofint.sel(y = slice(0,y_trim+1))
+    gridT2 = normalise_variable_names(gridT2)
+    gridT2 = gridT2[['thetao', 'so']]#, 'area']]
     # Close the original dataset
     so = gridT2.so
     thetao = gridT2.thetao
     #return so, thetao
     return gridT2
+
+def load_area(filepath_nemo_output):
+    # Load in the simulation files 
+    gridT_varofint = xr.open_dataset(filepath_nemo_output)
+    print('You have loaded:', filepath_nemo_output)
+    # And cut out variables which are not needed
+    gridT_varofint = gridT_varofint.squeeze('time_counter').sel(axis_nbounds=1).drop('time_counter').drop('time_centered')
+    # Crop out most of the world and just save Antarctica 
+    # Specify the coordinates needed
+    min_lat = -52.2
+    y_trim = np.max(np.argwhere(gridT_varofint.nav_lat[:,0].data <= min_lat))
+    print('Cropped to Antarctica only')
+    # Take this slice 
+    gridT2 = gridT_varofint.sel(y = slice(0,y_trim+1))
+    gridT2 = normalise_variable_names(gridT2)
+    gridT2 = gridT2[['area']]
+    # Close the original dataset
+    areas = gridT2.area
+    print('Returning area')
+    return areas
 
 def load_gridcoords(filepath_nemo_output):
     # Load in the simulation files 
@@ -176,6 +230,20 @@ def apply_10nns(exp_name, this_collection, clean_df, path_model, path_norm_metri
     #lat_lon_by_basin = df_pred.groupby('basin', as_index = False).mean()[['lat','lon']]
     return melt_by_basin
 
+def expand_to_full_grid(cropped, y_trim, gridT_varofint):
+    """
+    cropped: data to return to full array 
+    y_trim: last y-index included in the crop
+    grdiT_varofint: original full grid dataset (for coords)
+    """
+    full = xr.DataArray(
+        np.full((gridT_varofint.nav_lat.shape), np.nan),
+        dims=("y", "x"),
+        coords={"nav_lat": (("y", "x"), gridT_varofint.nav_lat.data),
+                "nav_lon": (("y", "x"), gridT_varofint.nav_lon.data),})
+    full.loc[dict(y=slice(0, y_trim+1))] = cropped
+    return full
+
 def apply_nn_to_NEMO(filepath_nemo_output, 
                      filepath_mask, 
                      filepath_geomvars, 
@@ -183,8 +251,6 @@ def apply_nn_to_NEMO(filepath_nemo_output,
                      path_model, 
                      path_norm_metrics, 
                      filepath_nn_output, 
-                     simulation, 
-                     year_of_interest, 
                      this_collection, 
                      exp_name, 
                      join_ice_shelves, 
@@ -207,6 +273,7 @@ def apply_nn_to_NEMO(filepath_nemo_output,
     # The basins mask for the NEMO 025 grid  
     basins_NEMO = masks.basins_NEMO.values
     if join_ice_shelves == True:
+        print('NOTE THAT THIS DOES NOT CURRENTLY JOIN THE RIGHT ICE SHELVES') 
         # Dotson and Crosson?
         #basins_NEMO[basins_NEMO == 101] = 129
         # Abbot Ice Shelf
@@ -216,6 +283,7 @@ def apply_nn_to_NEMO(filepath_nemo_output,
         # Lambert 
         basins_NEMO[basins_NEMO == 20] = 103
     basin_nos = np.arange(1,156, dtype = 'float32')
+    basin_nos = np.unique(basins_NEMO)
     
     # Load in the mask for the ocean region 
     bmach_masks = xr.open_dataset(filepath_eORCA1_bmach_masks)
@@ -278,7 +346,7 @@ def apply_nn_to_NEMO(filepath_nemo_output,
         masked_depth = gridT2.where(ocean_edge_basin == 1)
         profiles = masked_depth.stack(points=("x", "y"))
         profiles = profiles.dropna(dim="points", how="all")
-        profiles = profiles.drop_vars(["area", "bathy", "isf_draft"]) 
+        #profiles = profiles.drop_vars(["area", "bathy", "isf_draft"]) 
         # Fill the nan values in the profile
         profile_kk = profiles.mean(dim = 'points').interpolate_na(dim = 'deptht').ffill('deptht').bfill('deptht')
         # Add a coordinate for kk
@@ -296,7 +364,9 @@ def apply_nn_to_NEMO(filepath_nemo_output,
 
     # Extract the relevant values of temperature and salinity 
     temp_xy = all_profiles.thetao.interp(deptht = geoms.isf_draft).sel(kk=basins_merged)
+    temp_xy = temp_xy.reset_coords(drop=True)
     sals_xy = all_profiles.so.interp(deptht = geoms.isf_draft).sel(kk=basins_merged)
+    sals_xy = sals_xy.reset_coords(drop=True)
     
     # Calculate mean and standard deviation by region
     # Note: this step produces an error because some basins have nan mean, but the code still runs so it's okay?
@@ -309,39 +379,27 @@ def apply_nn_to_NEMO(filepath_nemo_output,
     std_T = stdT_by_region.sel(basins_NEMO = basins_merged)
     mean_S = meanS_by_region.sel(basins_NEMO = basins_merged)
     std_S = stdS_by_region.sel(basins_NEMO = basins_merged)
+    # Reset the coordinates
+    mean_T = mean_T.reset_coords(drop=True)
+    mean_S = mean_S.reset_coords(drop=True)
+    std_T = std_T.reset_coords(drop=True)
+    std_S = std_S.reset_coords(drop=True)
 
     # Create the input dataset for the neural network to be applied to
-    ds = xr.Dataset(data_vars=dict(
-                                   distances_GL           = (["y", "x"], geoms.distances_GL.data),
-                                   distances_OO           = (["y", "x"], geoms.distances_OO.data),
-                                   distances_OC           = (["y", "x"], geoms.distances_OC.data),
-                                   area                   = (["y", "x"], geoms.areas.data),
-                                   fraction               = (["y", "x"], geoms.fraction.data),
-                                   temperature_prop       = (["y", "x"], temp_xy.data),
-                                   mean_T                 = (["y", "x"], mean_T.data),
-                                   std_T                  = (["y", "x"], std_T.data),
-                                   salinity_prop          = (["y", "x"], sals_xy.data), 
-                                   mean_S                 = (["y", "x"], mean_S.data),
-                                   std_S                  = (["y", "x"], std_S.data),
-                                   corrected_isdraft      = (["y", "x"], geoms.isf_draft.data),
-                                   bathymetry             = (["y", "x"], geoms.bathymetry.data),
-                                   slope_is_lon           = (["y", "x"], geoms.slope_isdraft_lon.data),
-                                   slope_is_lat           = (["y", "x"], geoms.slope_isdraft_lat.data), 
-                                   slope_ba_lon           = (["y", "x"], geoms.slope_bathy_lon.data),
-                                   slope_ba_lat           = (["y", "x"], geoms.slope_bathy_lat.data),
-                                   slope_is_across_front  = (["y", "x"], geoms.slope_is_across_front.data),
-                                   slope_is_towards_front = (["y", "x"], geoms.slope_is_towards_front.data), 
-                                   slope_ba_across_front  = (["y", "x"], geoms.slope_ba_across_front.data),
-                                   slope_ba_towards_front = (["y", "x"], geoms.slope_ba_towards_front.data),
-                                   basins_NEMO            = (["y", "x"], basins_merged.data),
-                                  ),
-                       coords=dict(
-                                   lon = (("y", "x"), geoms.lon.data),
-                                   lat = (("y", "x"), geoms.lat.data),    
-                                  ),
-                        attrs=dict(
-                                   description    = "Neural network input variables"),
-                                  )
+    ds = geoms.rename({"areas": "area",
+                       "isf_draft": "corrected_isdraft",
+                       "slope_isdraft_lon": "slope_is_lon",
+                       "slope_isdraft_lat": "slope_is_lat",
+                       "slope_bathy_lon": "slope_ba_lon",
+                       "slope_bathy_lat": "slope_ba_lat",})
+    ds = ds.assign(temperature_prop = temp_xy,
+                      mean_T           = mean_T,
+                      std_T            = std_T,
+                      salinity_prop    = sals_xy,
+                      mean_S           = mean_S,
+                      std_S            = std_S,
+                      basins_NEMO      = basins_merged,)
+    ds.attrs["description"] = "Neural network input variables"
 
     # Rename variables in closed cavity mask 
     if 'y_grid_T' in basins_merged.dims:
@@ -361,6 +419,7 @@ def apply_nn_to_NEMO(filepath_nemo_output,
     melt_by_basin = apply_10nns(exp_name, this_collection, selected.to_xarray(), path_model, path_norm_metrics)
     print('Applied NN. Time: {:.1f} s               '.format(time.time() - start_time))
     
+    areas = load_area(filepath_nemo_output)
     melt_all = np.zeros_like(mask_nocavs)
     melt_b = np.zeros_like(mask_nocavs)
     melt_t = np.zeros_like(mask_nocavs)
@@ -393,8 +452,13 @@ def apply_nn_to_NEMO(filepath_nemo_output,
             idxn = np.unique(idx[dist < np.min(dist[dist != np.min(dist)]) * 2])
             for k in range(len(idxn)):
                 ocean_edge_basin[iy[idxn[k]], ix[idxn[k]]] = 1
-        pixels = np.sum(ocean_edge_basin)
-        melt_per_pixel = melt_by_basin.melt_Gt[kk]/pixels
+        # Redistribute the melt over the relevant cells
+        # Number of pixels?
+        #pixels = np.sum(ocean_edge_basin)
+        # Total area covered 
+        ocean_area = np.sum(areas * ocean_edge_basin).data
+        # Melt per pixel?? 
+        melt_per_pixel = melt_by_basin.melt_Gt[kk] * (10e12/(60*60*24*365.5)) /ocean_area
         ocean_melt = ocean_edge_basin * melt_per_pixel
         # Apply top and bottom over the relevant cells
         ocean_melt_b = ocean_edge_basin * melt_b_basin
@@ -406,22 +470,27 @@ def apply_nn_to_NEMO(filepath_nemo_output,
         if verbose == 1:
             print('{} out of {} profiles processed'.format(kk+1, len(melt_by_basin.basin)), end = '\r')
     print('Propagated melt to ocean cells. Time: {:.1f} s'.format(time.time() - start_time))
-    
-    # Create a netcdf dataset for the temperature and salinity profiles 
+
+    # Expanding the grid back to the NEMO eORCA1 grid 
+    gridT_varofint = xr.open_dataset(filepath_nemo_output)[['x','y']]
+    min_lat = -52.2
+    y_trim = np.max(np.argwhere(gridT_varofint.nav_lat[:,0].data <= min_lat))
+    full_t   = expand_to_full_grid(melt_t,    y_trim, gridT_varofint)
+    full_b   = expand_to_full_grid(melt_b,    y_trim, gridT_varofint)
+    full_all = expand_to_full_grid(melt_all,  y_trim, gridT_varofint)
+
     # Create a netcdf dataset for the temperature and salinity profiles 
     output_melt = xr.Dataset(data_vars=dict(
-                                            melt      = (["y", "x"], melt_all.data), 
-                                            melt_top  = (["y", "x"], melt_t.data),
-                                            melt_base = (["y", "x"], melt_b.data),
+                                            melt      = (["y", "x"], full_all.data), 
+                                            melt_top  = (["y", "x"], full_t.data),
+                                            melt_base = (["y", "x"], full_b.data),
                                            ),
                                 coords=dict(
-                                            lon = (("y", "x"), coords.nav_lon.data),
-                                            lat = (("y", "x"), coords.nav_lat.data),    
+                                            lon = (("y", "x"), full_all.nav_lon.data),
+                                            lat = (("y", "x"), full_all.nav_lat.data),    
                                            ),
                                  attrs=dict(
                                             description    = "Neural network output", 
-                                            simulation_run = simulation, 
-                                            year           = year_of_interest, 
                                             history        = f"{time.ctime()}: Applied neural network"),
                             )     
     
@@ -437,7 +506,7 @@ def apply_nn_to_NEMO(filepath_nemo_output,
                                      "units": "degrees_east"})
     
     # Export to netcdf 
-    filepath_this_nn_output = filepath_nn_output + 'nn_output_melt' '_' + simulation + '_' + year_of_interest + '.nc'
+    filepath_this_nn_output = filepath_nn_output #+ 'nn_output_melt' '_' + simulation + '_' + year_of_interest + '.nc'
     output_melt.to_netcdf(filepath_this_nn_output)
     print('You have saved the nn output to:', filepath_this_nn_output)
     print('Saved melt. Time: {:.1f} s'.format(time.time() - start_time))

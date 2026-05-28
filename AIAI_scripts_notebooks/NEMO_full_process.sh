@@ -1,7 +1,10 @@
 #!/bin/bash
 
+nemo_input="/bettik/ockendeh/NEMO_simulations/TGCC/eORCA1.L75-TOTO_y1985.1y_gridT.nc"
 nemo_run="DUM001"
 year="9999"
+filepath_output="/bettik/ockendeh/SCRIPTS/simpleNN_basal_melt/data/processing_ho/"
+nemo_output=${filepath_output}nn_output_melt_${nemo_run}_${year}.nc
 job_type='NEMO'
 echo $job_type $nemo_run $year
 echo "Running these variables"
@@ -26,7 +29,7 @@ conda activate nnets_py38
 # Run python with the specified variables 
 # The 2>&1 means that errors in the python file will appear in the stdout file not the stderr file (I think) 
 echo "Beginning python script"
-python -u $path_python $nemo_run $year 2>&1 
+python -u $path_python --nnin $nemo_input --nnout $nemo_output 2>&1 
 echo 'Finished' $OAR_JOB_ID 
 echo 'Finished' $OAR_JOB_ID 1>&2
 EOF
