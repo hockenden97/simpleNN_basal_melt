@@ -59,6 +59,7 @@ if comp == 'TGCC':
     # Neural network filepaths 
     path_model = '/ccc/scratch/cont003/gen6035/ockendeh/NEMO/eORCA1.L75/eORCA1.L75-I/NEMO_simulations/models/'
     path_norm_metrics = '/ccc/scratch/cont003/gen6035/ockendeh/NEMO/eORCA1.L75/eORCA1.L75-I/NEMO_simulations/models/'
+    filepath_domain_cfg = '/ccc/work/cont003/gen6035/ockendeh/NEMO/eORCA1.L75/eORCA1.L75-I/eORCA1.4.3_CavsForNN_domain_cfg.nc'
 elif comp == 'dahu':
     # The target grid mask 
     filepath_mask = '/bettik/ockendeh/NEMO_simulations/NEMO025_bmach_geometric_masks.nc'
@@ -69,6 +70,7 @@ elif comp == 'dahu':
     # Neural network filepaths 
     path_model = '/bettik/ockendeh/NEMO_simulations/models/'
     path_norm_metrics = '/bettik/ockendeh/NEMO_simulations/models/'
+    filepath_domain_cfg = '/bettik/ockendeh/NEMO_simulations/TGCC/eORCA1.4.3_CavsForNN_domain_cfg.nc'
 
 # And the location of the output files 
 # filepath_nn_output = '/ccc/scratch/cont003/gen6035/ockendeh/NEMO/eORCA1.L75/eORCA1.L75-TOTO-RST.007/'

@@ -248,13 +248,15 @@ def apply_nn_to_NEMO(filepath_nemo_output,
                      filepath_mask, 
                      filepath_geomvars, 
                      filepath_eORCA1_bmach_masks, 
+                     filepath_domain_CFG,
                      path_model, 
                      path_norm_metrics, 
                      filepath_nn_output, 
                      this_collection, 
                      exp_name, 
                      join_ice_shelves, 
-                     verbose = 0):
+                     verbose = 0, 
+                     nemo_version = '5'):
     ''' This function takes a NEMO T/S output file,       '''
     ''' and applies the trained neural network to it,     '''
     ''' giving an output melt file to feed back into NEMO '''
@@ -423,6 +425,7 @@ def apply_nn_to_NEMO(filepath_nemo_output,
     melt_all = np.zeros_like(mask_nocavs)
     melt_b = np.zeros_like(mask_nocavs)
     melt_t = np.zeros_like(mask_nocavs)
+    CFG = xr.open_dataset(filepath_domain_CFG)
     print('Putting melt back onto the ocean grid')
     for kk in range(len(melt_by_basin.basin)):
         i = melt_by_basin.basin[kk]
@@ -458,11 +461,13 @@ def apply_nn_to_NEMO(filepath_nemo_output,
         # Total area covered 
         ocean_area = np.sum(areas * ocean_edge_basin).data
         # Melt per pixel?? 
-        melt_per_pixel = melt_by_basin.melt_Gt[kk] * (10e12/(60*60*24*365.5)) /ocean_area
+        melt_per_pixel = melt_by_basin.melt_Gt[kk] * (1e12/(60*60*24*365.25)) /ocean_area
         ocean_melt = ocean_edge_basin * melt_per_pixel
         # Apply top and bottom over the relevant cells
-        ocean_melt_b = ocean_edge_basin * melt_b_basin
-        ocean_melt_t = ocean_edge_basin * melt_t_basin
+        #ocean_melt_b = ocean_edge_basin * melt_b_basin
+        #ocean_melt_t = ocean_edge_basin * melt_t_basin
+        ocean_melt_b = ocean_edge_basin * CFG.bathy_metry.isel(t=0).values[0:110]
+        ocean_melt_t = ocean_edge_basin * CFG.isf_draft.isel(t=0).values[0:110]
         # Sum up the melt over all the basins
         melt_all = melt_all + ocean_melt
         melt_b = melt_b + ocean_melt_b
@@ -471,7 +476,8 @@ def apply_nn_to_NEMO(filepath_nemo_output,
             print('{} out of {} profiles processed'.format(kk+1, len(melt_by_basin.basin)), end = '\r')
     print('Propagated melt to ocean cells. Time: {:.1f} s'.format(time.time() - start_time))
 
-    # Expanding the grid back to the NEMO eORCA1 grid 
+    # Expanding the grid back to the NEMO eORCA1 grid
+    # gridT_varofint = xr.open_dataset('/ccc/work/cont003/gen6035/ockendeh/NEMO/eORCA1.L75/eORCA1.L75-I/eORCA1.4.3_CavsForNN_domain_cfg.nc')[['x','y']]
     gridT_varofint = xr.open_dataset(filepath_nemo_output)[['x','y']]
     min_lat = -52.2
     y_trim = np.max(np.argwhere(gridT_varofint.nav_lat[:,0].data <= min_lat))
@@ -479,6 +485,16 @@ def apply_nn_to_NEMO(filepath_nemo_output,
     full_b   = expand_to_full_grid(melt_b,    y_trim, gridT_varofint)
     full_all = expand_to_full_grid(melt_all,  y_trim, gridT_varofint)
 
+    if nemo_version == '5':
+        # In NEMO 5 the melt convention has changed
+        # Melting is now positive and refreezing is now negative 
+        print('New NEMO version (v{}), melt is positive'.format(nemo_version))
+        full_all = full_all * -1 
+    else:
+        # In NEMO 4 the melt convention is the same as in Pierre's simulations
+        print('Old NEMO version (v{}), melt is negative'.format(nemo_version))
+        full_all = full_all 
+    
     # Create a netcdf dataset for the temperature and salinity profiles 
     output_melt = xr.Dataset(data_vars=dict(
                                             melt      = (["y", "x"], full_all.data), 
@@ -493,7 +509,9 @@ def apply_nn_to_NEMO(filepath_nemo_output,
                                             description    = "Neural network output", 
                                             history        = f"{time.ctime()}: Applied neural network"),
                             )     
-    
+    output_melt = output_melt.fillna(0)
+    print('Nan values filled')
+
     output_melt["melt"].attrs.update({"standard_name": "Sub-shelf melt for parameterised regions",
                                       "units": "kg m-2 s-1"})
     output_melt["melt_top"].attrs.update({"standard_name": "Top level to inject melt",
